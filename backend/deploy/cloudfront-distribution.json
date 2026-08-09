@@ -1,0 +1,26 @@
+{
+  "CallerReference": "ghostwire-frontend-1",
+  "Comment": "ghostwire hackathon demo frontend",
+  "Enabled": true,
+  "DefaultRootObject": "index.html",
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "ghostwire-s3-origin",
+        "DomainName": "ghostwire-frontend-816772455264.s3.eu-west-2.amazonaws.com",
+        "OriginAccessControlId": "E2QGRPPBNYYP84",
+        "S3OriginConfig": { "OriginAccessIdentity": "" }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "ghostwire-s3-origin",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "AllowedMethods": {
+      "Quantity": 2,
+      "Items": ["GET", "HEAD"]
+    },
+    "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "ghostwire-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/local-server.ts",
+    "seed": "tsx scripts/seed.ts",
+    "smoke": "tsx scripts/test-lambda-entry.ts",
+    "test:security": "tsx scripts/test-rate-limit.ts",
+    "build": "tsc -p tsconfig.json",
+    "build:lambda": "node scripts/build-lambda.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.658.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "pg": "^8.13.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.7.4",
+    "@types/pg": "^8.11.10",
+    "esbuild": "^0.28.1",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}

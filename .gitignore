@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.production
+*.log
+.DS_Store
+.vite/
+dist-lambda/
+lambda.zip
+deploy/lambda-env.generated.json
+tools/
+*.tsbuildinfo
