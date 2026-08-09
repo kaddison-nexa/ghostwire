@@ -35,35 +35,22 @@ of resetting every conversation. See [`db/schema.sql`](db/schema.sql) and
    the read *and* the write surviving, with the write still intact after the
    node rejoins.
 
-## Why CockroachDB (not just "a database")
+## Why CockroachDB
 
 - One transactional store for both vector embeddings and relational state —
   no split-brain between a vector DB and a separate system of record.
 - Serializable isolation on the read-modify-write that actually matters here:
   the edit → style-profile update.
 - Durability matters concretely for this product: the whole value prop is
-  posting while a story is still hot, so the memory layer going down during
-  exactly the kind of infra stress that correlates with a breaking story is a
-  real failure mode, not a hypothetical one. `resilience-demo/` is the
-  evidence for that claim, not just an architecture diagram.
+  posting while a story is still hot.
 
 ## Live deployment
 
-- **Frontend**: React SPA on S3 (private bucket) behind CloudFront —
+- **Frontend**: React SPA on S3 behind CloudFront —
   [d2d4ejc1l9z9ah.cloudfront.net](https://d2d4ejc1l9z9ah.cloudfront.net)
 - **Backend**: AWS Lambda behind a public Function URL
   ([`backend/src/lambda-entry.ts`](backend/src/lambda-entry.ts)), talking to
-  CockroachDB Cloud and Amazon Bedrock
-- **Guardrails on the public endpoint** (it's public and unauthenticated by
-  AWS's own access control, so the app defends itself):
-  - Per-IP, per-route rate limits ([`lib/rateLimit.ts`](backend/src/lib/rateLimit.ts))
-  - A shared-secret header required on every request
-  - A hard daily Bedrock spend cap, enforced *synchronously in-request*
-    before any billable call — not a delayed billing alert
-    ([`lib/budget.ts`](backend/src/lib/budget.ts))
-- Deployment artifacts (IAM policies, CloudFront config, build/deploy
-  scripts) are in [`backend/deploy/`](backend/deploy) and
-  [`backend/scripts/`](backend/scripts).
+  CockroachDB Cloud and Amazon Bedrock.
 
 ## Stack
 
