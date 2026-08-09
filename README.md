@@ -3,6 +3,8 @@
 Persistent, transactionally-consistent voice memory for a cybersecurity
 personal-brand agent — built for the **CockroachDB × AWS Hackathon**.
 
+**Live demo: [d2d4ejc1l9z9ah.cloudfront.net](https://d2d4ejc1l9z9ah.cloudfront.net)**
+
 Most "AI writes your posts" tools fake personalization with a fixed window of
 your last few edits stuffed into a prompt. Ghostwire replaces that with a real
 memory: every accepted edit updates a persistent, per-platform style profile
@@ -13,17 +15,25 @@ of resetting every conversation. See [`db/schema.sql`](db/schema.sql) and
 
 ## What it does
 
-1. **Personalized triage** — scores incoming cyber news against *this user's*
-   engagement history, not a global trending score.
+1. **Live personalized triage** — pulls real, current entries from CISA's
+   Known Exploited Vulnerabilities catalog and The Hacker News
+   ([`backend/src/lib/cisaKev.ts`](backend/src/lib/cisaKev.ts),
+   [`hackerNews.ts`](backend/src/lib/hackerNews.ts)), then scores them against
+   *this user's* engagement history — not a global trending score. A
+   cold-start user with no history yet gets an honest fallback (sorted by
+   severity/recency) instead of a fabricated match score; the UI visibly
+   distinguishes the two states.
 2. **Voice-matched drafting** — generates platform-specific drafts (LinkedIn
    vs. X) by retrieving the user's persistent style vector and nearest past
-   edits, via Amazon Bedrock (Titan embeddings + Claude).
+   edits, via Amazon Bedrock (Titan embeddings + Claude Sonnet 4.5).
 3. **Memory consolidation** — every edit is written to CockroachDB in the same
    transaction that updates the running style-profile average, so a
    concurrent draft request can never read a profile mid-update.
-4. **Resilience** — the UI's memory-layer status panel is a live read/write
-   health check against the cluster, meant to be watched while a node/region
-   is failed over during a demo.
+4. **Resilience, proven not just claimed** — see
+   [`resilience-demo/`](resilience-demo) for a scripted, reproducible run
+   against a real 3-node cluster that kills a node mid-write and shows both
+   the read *and* the write surviving, with the write still intact after the
+   node rejoins.
 
 ## Why CockroachDB (not just "a database")
 
@@ -31,10 +41,29 @@ of resetting every conversation. See [`db/schema.sql`](db/schema.sql) and
   no split-brain between a vector DB and a separate system of record.
 - Serializable isolation on the read-modify-write that actually matters here:
   the edit → style-profile update.
-- Multi-region durability matters concretely for this product: the whole
-  value prop is posting while a story is still hot, so the memory layer
-  going down during exactly the kind of infra stress that correlates with a
-  breaking story is a real failure mode, not a hypothetical one.
+- Durability matters concretely for this product: the whole value prop is
+  posting while a story is still hot, so the memory layer going down during
+  exactly the kind of infra stress that correlates with a breaking story is a
+  real failure mode, not a hypothetical one. `resilience-demo/` is the
+  evidence for that claim, not just an architecture diagram.
+
+## Live deployment
+
+- **Frontend**: React SPA on S3 (private bucket) behind CloudFront —
+  [d2d4ejc1l9z9ah.cloudfront.net](https://d2d4ejc1l9z9ah.cloudfront.net)
+- **Backend**: AWS Lambda behind a public Function URL
+  ([`backend/src/lambda-entry.ts`](backend/src/lambda-entry.ts)), talking to
+  CockroachDB Cloud and Amazon Bedrock
+- **Guardrails on the public endpoint** (it's public and unauthenticated by
+  AWS's own access control, so the app defends itself):
+  - Per-IP, per-route rate limits ([`lib/rateLimit.ts`](backend/src/lib/rateLimit.ts))
+  - A shared-secret header required on every request
+  - A hard daily Bedrock spend cap, enforced *synchronously in-request*
+    before any billable call — not a delayed billing alert
+    ([`lib/budget.ts`](backend/src/lib/budget.ts))
+- Deployment artifacts (IAM policies, CloudFront config, build/deploy
+  scripts) are in [`backend/deploy/`](backend/deploy) and
+  [`backend/scripts/`](backend/scripts).
 
 ## Stack
 
@@ -63,12 +92,28 @@ npm run dev                  # http://localhost:5173
 
 Two demo personas are seeded so the memory story is visible immediately
 rather than requiring weeks of real usage:
-- **signal_ghost** — has prior edit history on LinkedIn and X; drafts and
-  feed ranking reflect a learned voice and topic interest from the start.
+- **signal_ghost** — has prior edit history on LinkedIn and X (tuned toward
+  AI-attack and supply-chain interest); drafts and feed ranking reflect a
+  learned voice and topic interest from the start.
 - **new_analyst** — no history; cold-start baseline for comparison.
 
 Set `MOCK_LLM=false` with real AWS credentials and a real `DATABASE_URL`
-(free tier at CockroachDB Cloud) to run against live Bedrock + CockroachDB.
+(CockroachDB Cloud) to run against live Bedrock + CockroachDB.
+
+## Deploying
+
+`backend/scripts/build-lambda.mjs` bundles `lambda-entry.ts` into a single
+deployable zip; `backend/deploy/` has the IAM trust/permission policies and
+CloudFront config used for the live deployment above. See
+[`AGENTS.md`](AGENTS.md) for the full picture of how the pieces fit together.
+
+## Resilience demo
+
+[`resilience-demo/`](resilience-demo) runs a real 3-node CockroachDB cluster
+locally, applies the actual `db/schema.sql`, kills a node, reads *and writes*
+`style_profiles` while it's down, then restarts the node and confirms the
+write survived. Proof, not just a claim — see
+[`resilience-demo/README.md`](resilience-demo/README.md).
 
 ## Repo layout
 
