@@ -2,9 +2,10 @@ import "dotenv/config";
 import { handler as feedHandler } from "./handlers/feed.js";
 import { handler as generateDraftHandler } from "./handlers/generateDraft.js";
 import { handler as submitEditHandler } from "./handlers/submitEdit.js";
-import { handler as ingestNewsHandler } from "./handlers/ingestNews.js";
 import { handler as ingestFeedHandler } from "./handlers/ingestFeed.js";
 import { handler as healthHandler } from "./handlers/health.js";
+import { handler as resetColdStartHandler } from "./handlers/resetColdStart.js";
+import { handler as restoreSignalGhostHandler } from "./handlers/restoreSignalGhost.js";
 import { checkRateLimit } from "./lib/rateLimit.js";
 import { BudgetExceededError } from "./lib/budget.js";
 import type { LambdaEvent, LambdaResponse } from "./lib/http.js";
@@ -36,8 +37,9 @@ const ROUTES: Record<string, Record<string, (e: LambdaEvent) => Promise<LambdaRe
   POST: {
     "/draft": generateDraftHandler,
     "/edit": submitEditHandler,
-    "/news": ingestNewsHandler,
     "/ingest": ingestFeedHandler,
+    "/reset-cold-start": resetColdStartHandler,
+    "/restore-signal-ghost": restoreSignalGhostHandler,
   },
 };
 
@@ -48,8 +50,12 @@ const RATE_LIMITS: Record<string, number> = {
   "/draft": 15,
   "/ingest": 5,
   "/edit": 20,
-  "/news": 20,
   "/feed": 60,
+  "/reset-cold-start": 10,
+  // Re-seeds ~7 stories x 2 platforms = ~21 Bedrock calls per invocation —
+  // more expensive per-call than most routes, so a tighter budget than
+  // reset-cold-start (which does zero Bedrock calls).
+  "/restore-signal-ghost": 5,
 };
 const RATE_LIMIT_WINDOW_SECONDS = 300;
 

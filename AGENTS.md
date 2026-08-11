@@ -16,8 +16,10 @@ both vector embeddings and relational state (no separate vector DB).
   also runs locally via `backend/src/local-server.ts`, which mounts the same
   handler functions behind Express for demo/dev — don't fork logic between
   the two, the handler is the single source of truth.
-- `backend/scripts/seed.ts` — seeds a demo persona with prior post/edit
-  history so the "cold start vs. warmed-up" demo works without weeks of real use.
+- `backend/scripts/seed.ts` — full DB bootstrap (schema + both personas).
+  The curated `signal_ghost` history lives in `backend/src/lib/seedData.ts`,
+  shared with `handlers/restoreSignalGhost.ts` so both a fresh bootstrap and
+  a live re-seed use the exact same data, not two copies that can drift.
 - `frontend/` — Vite + React + TS. Talks to the backend over the routes in
   `local-server.ts` / the deployed API Gateway.
 
@@ -32,7 +34,7 @@ both vector embeddings and relational state (no separate vector DB).
   CockroachDB's SERIALIZABLE isolation makes these a normal, expected outcome
   under contention, not an error. See `memory.ts` and `budget.ts` for the
   pattern. Sourced from CockroachDB's own `designing-application-transactions`
-  agent skill (`.agents/skills/`) — that skill is worth rereading before
+  agent skill (`.claude/skills/`) — that skill is worth rereading before
   writing any new transactional code here.
 - Embeddings are Amazon Titan Text Embeddings V2 (1024-dim), via
   `backend/src/lib/bedrock.ts`. If you swap embedding models, update the
@@ -46,6 +48,22 @@ both vector embeddings and relational state (no separate vector DB).
   authorization and per-IP rate limiting (`backend/src/lib/rateLimit.ts`)
   live. Don't move rate-sensitive routes to a new path without adding them to
   `RATE_LIMITS` in `lambda-entry.ts`.
+- `/news` (single-item manual ingest, `handlers/ingestNews.ts`) is mounted in
+  `local-server.ts` only, deliberately NOT in `lambda-entry.ts` — it accepts
+  unvalidated content from any caller and costs a real Bedrock call per
+  request, with no product value on the public deployment (nothing in the
+  app calls it; `/ingest` uses `upsertNewsItem` directly). Don't add it back
+  to the public routes without re-thinking that tradeoff.
+- The two demo personas need different protection, both scoped so the
+  handler can only ever target one hardcoded account — never parameterized
+  by the caller, so neither can be pointed at the other persona:
+  `resetColdStart.ts` wipes `new_analyst` back to empty (the public URL has
+  to survive judges clicking "generate draft" on it without permanently
+  warming it up for the next visitor), and `restoreSignalGhost.ts` re-seeds
+  `signal_ghost`'s curated voice from `lib/seedData.ts` (its style profile
+  has no such protection from real edits diluting it over the Judging
+  Period, so this is the recovery path). If you add a third demo persona,
+  it needs the same treatment, not a shared/parameterized reset endpoint.
 
 ## Running it
 ```

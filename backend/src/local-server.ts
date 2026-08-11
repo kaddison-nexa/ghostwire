@@ -9,6 +9,8 @@ import { handler as submitEditHandler } from "./handlers/submitEdit.js";
 import { handler as ingestNewsHandler } from "./handlers/ingestNews.js";
 import { handler as ingestFeedHandler } from "./handlers/ingestFeed.js";
 import { handler as healthHandler } from "./handlers/health.js";
+import { handler as resetColdStartHandler } from "./handlers/resetColdStart.js";
+import { handler as restoreSignalGhostHandler } from "./handlers/restoreSignalGhost.js";
 import { BudgetExceededError } from "./lib/budget.js";
 
 // Every route below is a thin adapter over the exact same handler function
@@ -43,8 +45,16 @@ function mount(
 mount("get", "/feed", feedHandler);
 mount("post", "/draft", generateDraftHandler);
 mount("post", "/edit", submitEditHandler);
+// /news is deliberately NOT mounted on the deployed Lambda (lambda-entry.ts)
+// — it accepts arbitrary unvalidated content from any caller and triggers a
+// real Bedrock call per request, so it's pure public attack surface with no
+// product value (nothing in the deployed app calls it; /ingest uses
+// upsertNewsItem directly). Kept here for local dev only, where the network
+// is trusted.
 mount("post", "/news", ingestNewsHandler);
 mount("post", "/ingest", ingestFeedHandler);
+mount("post", "/reset-cold-start", resetColdStartHandler);
+mount("post", "/restore-signal-ghost", restoreSignalGhostHandler);
 mount("get", "/health", healthHandler);
 
 const port = Number(process.env.PORT ?? 4000);

@@ -52,3 +52,11 @@ export function ingestFeed(): Promise<{
 }> {
   return req(`/ingest`, { method: "POST" });
 }
+
+export function resetColdStart(): Promise<{ reset: boolean }> {
+  return req(`/reset-cold-start`, { method: "POST" });
+}
+
+export function restoreSignalGhost(): Promise<{ restored: boolean }> {
+  return req(`/restore-signal-ghost`, { method: "POST" });
+}

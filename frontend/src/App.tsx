@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchFeed, ingestFeed } from "./lib/api";
+import { fetchFeed, ingestFeed, resetColdStart, restoreSignalGhost } from "./lib/api";
 import type { FeedItem, Persona } from "./lib/types";
 import { Header } from "./components/Header";
 import { NewsCard } from "./components/NewsCard";
@@ -20,6 +20,10 @@ export default function App() {
   const [ingesting, setIngesting] = useState(false);
   const [ingestMessage, setIngestMessage] = useState<string | null>(null);
   const [ingestHadErrors, setIngestHadErrors] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  const activePersona = PERSONAS.find((p) => p.id === activePersonaId)!;
 
   const loadFeed = useCallback((handle: string) => {
     setLoadingFeed(true);
@@ -58,6 +62,30 @@ export default function App() {
     }
   }
 
+  async function handleResetColdStart() {
+    setResetting(true);
+    try {
+      await resetColdStart();
+      loadFeed(activePersonaId);
+    } catch (e) {
+      setFeedError((e as Error).message);
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  async function handleRestoreSignalGhost() {
+    setRestoring(true);
+    try {
+      await restoreSignalGhost();
+      loadFeed(activePersonaId);
+    } catch (e) {
+      setFeedError((e as Error).message);
+    } finally {
+      setRestoring(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <Header personas={PERSONAS} activePersonaId={activePersonaId} onSelect={setActivePersonaId} />
@@ -68,9 +96,31 @@ export default function App() {
             <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--color-muted)]">
               personalized triage feed
             </h2>
-            <button className="btn text-[10px] px-2.5 py-1" onClick={handleIngest} disabled={ingesting}>
-              {ingesting ? "checking feeds…" : "check for new stories"}
-            </button>
+            <div className="flex items-center gap-2">
+              {!activePersona.warm && (
+                <button
+                  className="btn-magenta btn text-[10px] px-2.5 py-1"
+                  onClick={handleResetColdStart}
+                  disabled={resetting}
+                  title="Wipe this demo persona's engagement history back to a genuine cold start — only ever affects New Analyst, never Signal Ghost"
+                >
+                  {resetting ? "resetting…" : "reset to cold start"}
+                </button>
+              )}
+              {activePersona.warm && (
+                <button
+                  className="btn-magenta btn text-[10px] px-2.5 py-1"
+                  onClick={handleRestoreSignalGhost}
+                  disabled={restoring}
+                  title="Re-seed this persona's curated voice history — undoes any drift from edits other visitors have saved, only ever affects Signal Ghost"
+                >
+                  {restoring ? "restoring…" : "restore curated voice"}
+                </button>
+              )}
+              <button className="btn text-[10px] px-2.5 py-1" onClick={handleIngest} disabled={ingesting}>
+                {ingesting ? "checking feeds…" : "check for new stories"}
+              </button>
+            </div>
           </div>
           {ingestMessage && (
             <p
