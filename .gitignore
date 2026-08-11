@@ -13,3 +13,4 @@ deploy/lambda-env.generated.json
 tools/
 *.tsbuildinfo
 .agents/
+DEVPOST_SUBMISSION.md
