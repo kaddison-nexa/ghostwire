@@ -44,6 +44,11 @@ of resetting every conversation. See [`db/schema.sql`](db/schema.sql) and
 - Durability matters concretely for this product: the whole value prop is
   posting while a story is still hot.
 
+## CockroachDB tools used
+
+- **Distributed Vector Indexing** — the core of the memory system; see above.
+- **Agent Skills Repo** ([cockroachlabs/cockroachdb-skills](https://github.com/cockroachlabs/cockroachdb-skills)) — installed via `npx skills add cockroachlabs/cockroachdb-skills` (`.claude/skills/`, tracked via `skills-lock.json`). Using `designing-application-transactions` to review our own transaction code surfaced a real gap: neither `recordEditAndUpdateStyle` nor `chargeBudget` retried on `40001` serialization failures, which CockroachDB's SERIALIZABLE isolation makes a normal, expected outcome under contention. Fixed in `backend/src/lib/db.ts` (`withSerializableRetry`) — a concrete improvement the skill produced, not just a checkbox.
+
 ## Live deployment
 
 - **Frontend**: React SPA on S3 behind CloudFront —

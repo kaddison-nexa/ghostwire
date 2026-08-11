@@ -26,6 +26,14 @@ both vector embeddings and relational state (no separate vector DB).
   `edits` insert that caused it (see `backend/src/lib/memory.ts`). This is the
   one invariant the whole memory story depends on — don't split it into two
   round trips.
+- Any explicit multi-statement transaction (`BEGIN`...`COMMIT`) must be
+  wrapped in `withSerializableRetry` (`backend/src/lib/db.ts`) so a `40001`
+  serialization failure retries instead of failing the request outright —
+  CockroachDB's SERIALIZABLE isolation makes these a normal, expected outcome
+  under contention, not an error. See `memory.ts` and `budget.ts` for the
+  pattern. Sourced from CockroachDB's own `designing-application-transactions`
+  agent skill (`.agents/skills/`) — that skill is worth rereading before
+  writing any new transactional code here.
 - Embeddings are Amazon Titan Text Embeddings V2 (1024-dim), via
   `backend/src/lib/bedrock.ts`. If you swap embedding models, update the
   `VECTOR(1024)` dimension in `db/schema.sql` to match.

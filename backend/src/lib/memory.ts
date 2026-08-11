@@ -1,4 +1,4 @@
-import { pool, toVectorLiteral, parseVectorLiteral } from "./db.js";
+import { pool, toVectorLiteral, parseVectorLiteral, withSerializableRetry } from "./db.js";
 import type { Platform } from "./types.js";
 
 export interface StyleProfile {
@@ -48,48 +48,50 @@ export async function recordEditAndUpdateStyle(params: {
   editedText: string;
   editVector: number[];
 }): Promise<{ sampleCount: number }> {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+  return withSerializableRetry(async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    await client.query(
-      `INSERT INTO edits (draft_id, user_id, platform, edited_text, edit_vector)
-       VALUES ($1, $2, $3, $4, $5::VECTOR)`,
-      [params.draftId, params.userId, params.platform, params.editedText, toVectorLiteral(params.editVector)]
-    );
+      await client.query(
+        `INSERT INTO edits (draft_id, user_id, platform, edited_text, edit_vector)
+         VALUES ($1, $2, $3, $4, $5::VECTOR)`,
+        [params.draftId, params.userId, params.platform, params.editedText, toVectorLiteral(params.editVector)]
+      );
 
-    const { rows } = await client.query(
-      `SELECT style_vector, sample_count FROM style_profiles
-       WHERE user_id = $1 AND platform = $2 FOR UPDATE`,
-      [params.userId, params.platform]
-    );
+      const { rows } = await client.query(
+        `SELECT style_vector, sample_count FROM style_profiles
+         WHERE user_id = $1 AND platform = $2 FOR UPDATE`,
+        [params.userId, params.platform]
+      );
 
-    let newVector: number[];
-    let newCount: number;
-    if (rows.length === 0) {
-      newVector = params.editVector;
-      newCount = 1;
-    } else {
-      const oldVector = parseVectorLiteral(rows[0].style_vector);
-      const oldCount = rows[0].sample_count as number;
-      newCount = oldCount + 1;
-      newVector = oldVector.map((v, i) => (v * oldCount + params.editVector[i]) / newCount);
+      let newVector: number[];
+      let newCount: number;
+      if (rows.length === 0) {
+        newVector = params.editVector;
+        newCount = 1;
+      } else {
+        const oldVector = parseVectorLiteral(rows[0].style_vector);
+        const oldCount = rows[0].sample_count as number;
+        newCount = oldCount + 1;
+        newVector = oldVector.map((v, i) => (v * oldCount + params.editVector[i]) / newCount);
+      }
+
+      await client.query(
+        `INSERT INTO style_profiles (user_id, platform, style_vector, sample_count, updated_at)
+         VALUES ($1, $2, $3::VECTOR, $4, now())
+         ON CONFLICT (user_id, platform)
+         DO UPDATE SET style_vector = $3::VECTOR, sample_count = $4, updated_at = now()`,
+        [params.userId, params.platform, toVectorLiteral(newVector), newCount]
+      );
+
+      await client.query("COMMIT");
+      return { sampleCount: newCount };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
     }
-
-    await client.query(
-      `INSERT INTO style_profiles (user_id, platform, style_vector, sample_count, updated_at)
-       VALUES ($1, $2, $3::VECTOR, $4, now())
-       ON CONFLICT (user_id, platform)
-       DO UPDATE SET style_vector = $3::VECTOR, sample_count = $4, updated_at = now()`,
-      [params.userId, params.platform, toVectorLiteral(newVector), newCount]
-    );
-
-    await client.query("COMMIT");
-    return { sampleCount: newCount };
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  } finally {
-    client.release();
-  }
+  });
 }

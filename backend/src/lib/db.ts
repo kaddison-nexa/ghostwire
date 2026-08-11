@@ -35,3 +35,27 @@ export function parseVectorLiteral(text: string): number[] {
     .filter(Boolean)
     .map(Number);
 }
+
+/**
+ * Retries the whole transaction attempt (fresh connection, fresh BEGIN) on a
+ * SQLSTATE 40001 serialization failure — CockroachDB's SERIALIZABLE isolation
+ * makes these a normal, expected outcome under contention, not an error
+ * condition, per CockroachDB's own transaction-design guidance
+ * (.agents/skills/designing-application-transactions). Any other error
+ * (including our own BudgetExceededError, which has no `.code`) passes
+ * through immediately — only real serialization failures get retried.
+ */
+export async function withSerializableRetry<T>(fn: () => Promise<T>, maxAttempts = 5): Promise<T> {
+  let backoffMs = 100;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code !== "40001" || attempt === maxAttempts) throw err;
+      await new Promise((resolve) => setTimeout(resolve, backoffMs + Math.random() * 100));
+      backoffMs = Math.min(backoffMs * 2, 2000);
+    }
+  }
+  throw new Error("unreachable");
+}
