@@ -4,7 +4,12 @@ import type { DraftResult, FeedItem, Platform } from "../lib/types";
 
 const PLATFORM_LABEL: Record<Platform, string> = { linkedin: "LinkedIn", x: "X" };
 
-export function DraftPanel(props: { handle: string; platform: Platform; newsItem: FeedItem }) {
+export function DraftPanel(props: {
+  handle: string;
+  platform: Platform;
+  newsItem: FeedItem;
+  onSaved?: () => void;
+}) {
   const [draft, setDraft] = useState<DraftResult | null>(null);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,6 +51,7 @@ export function DraftPanel(props: { handle: string; platform: Platform; newsItem
       setSampleCount(sampleCount);
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 1600);
+      props.onSaved?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {

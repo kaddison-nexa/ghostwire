@@ -37,3 +37,13 @@ export interface Persona {
   label: string;
   warm: boolean;
 }
+
+export interface VectorPoint2D {
+  x: number;
+  y: number;
+}
+
+export interface StyleVectorMapResult {
+  edits: Array<VectorPoint2D & { platform: Platform; createdAt: string }>;
+  current: Partial<Record<Platform, VectorPoint2D>>;
+}

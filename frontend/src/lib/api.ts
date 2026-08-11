@@ -1,4 +1,4 @@
-import type { DraftResult, FeedItem, HealthResult, Platform } from "./types";
+import type { DraftResult, FeedItem, HealthResult, Platform, StyleVectorMapResult } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 const API_KEY = import.meta.env.VITE_API_KEY;
@@ -59,4 +59,8 @@ export function resetColdStart(): Promise<{ reset: boolean }> {
 
 export function restoreSignalGhost(): Promise<{ restored: boolean }> {
   return req(`/restore-signal-ghost`, { method: "POST" });
+}
+
+export function getStyleVectorMap(handle: string): Promise<StyleVectorMapResult> {
+  return req(`/style-vector-map?handle=${encodeURIComponent(handle)}`);
 }

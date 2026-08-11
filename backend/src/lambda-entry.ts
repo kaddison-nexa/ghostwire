@@ -6,6 +6,7 @@ import { handler as ingestFeedHandler } from "./handlers/ingestFeed.js";
 import { handler as healthHandler } from "./handlers/health.js";
 import { handler as resetColdStartHandler } from "./handlers/resetColdStart.js";
 import { handler as restoreSignalGhostHandler } from "./handlers/restoreSignalGhost.js";
+import { handler as styleVectorMapHandler } from "./handlers/styleVectorMap.js";
 import { checkRateLimit } from "./lib/rateLimit.js";
 import { BudgetExceededError } from "./lib/budget.js";
 import type { LambdaEvent, LambdaResponse } from "./lib/http.js";
@@ -33,7 +34,7 @@ interface FunctionUrlEvent {
 }
 
 const ROUTES: Record<string, Record<string, (e: LambdaEvent) => Promise<LambdaResponse>>> = {
-  GET: { "/feed": feedHandler, "/health": healthHandler },
+  GET: { "/feed": feedHandler, "/health": healthHandler, "/style-vector-map": styleVectorMapHandler },
   POST: {
     "/draft": generateDraftHandler,
     "/edit": submitEditHandler,
@@ -51,6 +52,7 @@ const RATE_LIMITS: Record<string, number> = {
   "/ingest": 5,
   "/edit": 20,
   "/feed": 60,
+  "/style-vector-map": 60,
   "/reset-cold-start": 10,
   // Re-seeds ~7 stories x 2 platforms = ~21 Bedrock calls per invocation —
   // more expensive per-call than most routes, so a tighter budget than

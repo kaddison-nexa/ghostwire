@@ -1,8 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { DraftPanel } from "./DraftPanel";
+import { StyleVectorMap } from "./StyleVectorMap";
 import type { FeedItem } from "../lib/types";
 
 export function DraftModal(props: { handle: string; newsItem: FeedItem; onClose: () => void }) {
+  const [mapRefreshKey, setMapRefreshKey] = useState(0);
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") props.onClose();
@@ -41,8 +44,22 @@ export function DraftModal(props: { handle: string; newsItem: FeedItem; onClose:
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <DraftPanel handle={props.handle} platform="linkedin" newsItem={props.newsItem} />
-          <DraftPanel handle={props.handle} platform="x" newsItem={props.newsItem} />
+          <DraftPanel
+            handle={props.handle}
+            platform="linkedin"
+            newsItem={props.newsItem}
+            onSaved={() => setMapRefreshKey((k) => k + 1)}
+          />
+          <DraftPanel
+            handle={props.handle}
+            platform="x"
+            newsItem={props.newsItem}
+            onSaved={() => setMapRefreshKey((k) => k + 1)}
+          />
+        </div>
+
+        <div className="mt-4 border-t border-[var(--color-line)] pt-4">
+          <StyleVectorMap handle={props.handle} refreshKey={mapRefreshKey} />
         </div>
       </div>
     </div>

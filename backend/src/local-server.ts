@@ -11,6 +11,7 @@ import { handler as ingestFeedHandler } from "./handlers/ingestFeed.js";
 import { handler as healthHandler } from "./handlers/health.js";
 import { handler as resetColdStartHandler } from "./handlers/resetColdStart.js";
 import { handler as restoreSignalGhostHandler } from "./handlers/restoreSignalGhost.js";
+import { handler as styleVectorMapHandler } from "./handlers/styleVectorMap.js";
 import { BudgetExceededError } from "./lib/budget.js";
 
 // Every route below is a thin adapter over the exact same handler function
@@ -55,6 +56,7 @@ mount("post", "/news", ingestNewsHandler);
 mount("post", "/ingest", ingestFeedHandler);
 mount("post", "/reset-cold-start", resetColdStartHandler);
 mount("post", "/restore-signal-ghost", restoreSignalGhostHandler);
+mount("get", "/style-vector-map", styleVectorMapHandler);
 mount("get", "/health", healthHandler);
 
 const port = Number(process.env.PORT ?? 4000);
