@@ -86,6 +86,17 @@ export default function App() {
     }
   }
 
+  function handleCloseDraftModal() {
+    // Generating a draft records engagement, which feeds the interest
+    // vector future /feed calls rank against — so relevance scores on the
+    // other cards can be stale the moment the modal closes. Re-fetch so the
+    // list reflects whatever happened during the session without requiring
+    // a manual page reload. setSelected(null) first so the refreshed feed's
+    // re-sync logic in loadFeed doesn't re-select (and reopen) this item.
+    setSelected(null);
+    loadFeed(activePersonaId);
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <Header personas={PERSONAS} activePersonaId={activePersonaId} onSelect={setActivePersonaId} />
@@ -160,7 +171,7 @@ export default function App() {
       </main>
 
       {selected && (
-        <DraftModal handle={activePersonaId} newsItem={selected} onClose={() => setSelected(null)} />
+        <DraftModal handle={activePersonaId} newsItem={selected} onClose={handleCloseDraftModal} />
       )}
     </div>
   );
