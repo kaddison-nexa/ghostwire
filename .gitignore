@@ -12,3 +12,4 @@ lambda.zip
 deploy/lambda-env.generated.json
 tools/
 *.tsbuildinfo
+.agents/
