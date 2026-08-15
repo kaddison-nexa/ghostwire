@@ -3,8 +3,6 @@
 Persistent, transactionally-consistent voice memory for a cybersecurity
 personal-brand agent — built for the **CockroachDB × AWS Hackathon**.
 
-**Live demo: [d2d4ejc1l9z9ah.cloudfront.net](https://d2d4ejc1l9z9ah.cloudfront.net)**
-
 Most "AI writes your posts" tools fake personalization with a fixed window of
 your last few edits stuffed into a prompt. Ghostwire replaces that with a real
 memory: every accepted edit updates a persistent, per-platform style profile
@@ -51,8 +49,9 @@ of resetting every conversation. See [`db/schema.sql`](db/schema.sql) and
 
 ## Live deployment
 
-- **Frontend**: React SPA on S3 behind CloudFront —
-  [d2d4ejc1l9z9ah.cloudfront.net](https://d2d4ejc1l9z9ah.cloudfront.net)
+The demo URL is submitted directly to Devpost rather than published here.
+
+- **Frontend**: React SPA on S3 behind CloudFront.
 - **Backend**: AWS Lambda behind a public Function URL
   ([`backend/src/lambda-entry.ts`](backend/src/lambda-entry.ts)), talking to
   CockroachDB Cloud and Amazon Bedrock.

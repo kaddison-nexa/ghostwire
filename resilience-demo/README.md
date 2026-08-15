@@ -1,8 +1,8 @@
-# Resilience demo (for the video)
+# Resilience demo
 
 Proves the memory layer survives a node failure — the "post while the story's
-still hot" claim from the write-up needs to be more than an architecture
-diagram slide. This is the concrete evidence for it.
+still hot" claim needs to be more than an architecture diagram slide. This is
+the concrete, reproducible evidence for it.
 
 ## Why this runs locally, not against the real deployed cluster
 
@@ -49,22 +49,8 @@ runs our actual `db/schema.sql`, not a simplified stand-in.
 10. Reads it one more time — proves the write that happened *during* the
     outage actually persisted, not just that the cluster came back online
 
-Each step pauses for a few seconds (`pg_sleep`) so it's readable on camera
-without needing to edit/freeze-frame afterward.
-
-## Recording it
-
-Screen-record the terminal running `run.sh`. The moments worth landing on:
-- `\demo ls` showing **3 nodes** — establishes the cluster is real
-- The `BEFORE OUTAGE` read (`sample_count: 4`) — establish the baseline
-- `node 2 has been shutdown`, then `\demo ls` showing **only 2 nodes** —
-  the failure, proven visually rather than asserted
-- `DURING OUTAGE` read succeeding — the cluster didn't blink
-- `DURING OUTAGE: write also succeeded` (`sample_count: 5`) — this is the
-  strongest single line in the whole demo; it's a real write landing while
-  a third of the cluster is down
-- `AFTER RESTART` read still showing `5`, not `4` — the write wasn't lost,
-  reconciled away, or rolled back when the node rejoined
+Each step pauses for a few seconds (`pg_sleep`) so the output stays readable
+instead of scrolling past instantly.
 
 Total runtime is a little over a minute — cluster startup dominates, the
 actual kill/restart dance and the added pauses are still short.

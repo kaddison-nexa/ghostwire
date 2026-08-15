@@ -11,5 +11,6 @@ dist-lambda/
 lambda.zip
 deploy/lambda-env.generated.json
 tools/
+docs/
 *.tsbuildinfo
 .agents/
