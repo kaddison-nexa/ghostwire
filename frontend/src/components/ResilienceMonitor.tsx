@@ -52,7 +52,7 @@ export function ResilienceMonitor() {
       </div>
 
       <p className="mt-1 text-[10px] text-[var(--color-muted)]">
-        live read/write against CockroachDB · kill a node mid-demo, watch this keep ticking
+        live read/write against CockroachDB
       </p>
 
       <div className="mt-3 flex h-10 items-end gap-[3px]">

@@ -163,7 +163,7 @@ export default function App() {
 
         <section className="flex flex-col gap-6">
           <p className="panel p-4 text-sm text-[var(--color-muted)]">
-            select a story from the feed to draft against it — the draft workspace opens right over this page.
+            select a story from the feed to draft against it.
           </p>
 
           <ResilienceMonitor />
