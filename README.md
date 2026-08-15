@@ -49,8 +49,6 @@ of resetting every conversation. See [`db/schema.sql`](db/schema.sql) and
 
 ## Live deployment
 
-The demo URL is submitted directly to Devpost rather than published here.
-
 - **Frontend**: React SPA on S3 behind CloudFront.
 - **Backend**: AWS Lambda behind a public Function URL
   ([`backend/src/lambda-entry.ts`](backend/src/lambda-entry.ts)), talking to
